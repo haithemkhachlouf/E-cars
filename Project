@@ -1,0 +1,255 @@
+#include <stdio.h>
+#include<stdlib.h>
+#include <string.h>
+
+struct Voiture{
+    char marque[50];
+    char modele[50];
+    int disponible;
+    struct Voiture* next;
+};
+
+struct Location{
+    char date[10];
+    struct Voiture* voiture;
+    float prix ;
+    struct Location* next;
+};
+
+struct Voiture* voitures=NULL;
+struct Location* locations=NULL;
+
+void afficherVoituresDisponibles(){
+    printf("Voitures disponibles :\n");
+    struct Voiture* tmp=voitures;
+    while(tmp!=NULL){
+        if(tmp->disponible){
+            printf("%s %s\n",tmp->marque,tmp->modele);
+        }
+        tmp=tmp->next;
+    }
+}
+
+void afficherHistoriqueLocations(){
+    printf("Historique des locations :\n");
+    struct Location* tmp=locations;
+    while(tmp!=NULL){
+        if(tmp->voiture->disponible==0){
+            printf("Date : %s, Voiture : %s %s\n",tmp->date,tmp->voiture->marque,tmp->voiture->modele);
+        }
+        tmp=tmp->next;
+    }
+}
+
+void louerVoiture(char* marque, char* modele, char* date) {
+    struct Voiture* tmp=voitures;
+    while(tmp!=NULL){
+        if(strcmp(tmp->marque,marque)==0 && strcmp(tmp->modele,modele)==0){
+            if(tmp->disponible){
+                tmp->disponible=0;
+                struct Location* nouvelleLocation=(struct Location*) malloc(sizeof(struct Location));
+                strcpy(nouvelleLocation->date,date);
+                nouvelleLocation->voiture=tmp;
+                nouvelleLocation->next=locations;
+                locations=nouvelleLocation;
+                printf("La voiture %s %s a été louée.\n",marque,modele);
+            }
+            FILE *f=fopen("locations.txt","a");
+                if(f==NULL){
+                    printf("Erreur d'ouverture du fichier!\n");
+                    exit(1);
+                }
+                fprintf(f,"Date : %s, Voiture : %s %s\n",date,marque,modele);
+                fclose(f);
+            }
+            else{
+                printf("La voiture %s %s est indisponible.\n",marque,modele);
+            }
+            return;
+        }
+        tmp=tmp->next;
+    printf("La voiture %s %s n'a pas été trouvée.\n",marque,modele);
+}
+
+void afficherDescriptionVoiture(char* marque, char* modele){
+    struct Voiture* tmp=voitures;
+    while(tmp!=NULL){
+        if(strcmp(tmp->marque, marque)==0 && strcmp(tmp->modele,modele)==0){
+            printf("Marque : %s\n",tmp->marque);
+            printf("Modèle : %s\n",tmp->modele);
+            printf("Disponibilité : %s\n",tmp->disponible ? "Disponible" : "Indisponible");
+            return;
+        }
+        tmp=tmp->next;
+    }
+    printf("Désolé, la voiture %s %s n'a pas été trouvée.\n",marque,modele);
+}
+
+void supprimerVoiture(char* marque,char* modele){
+    struct Voiture* tmp=voitures;
+    struct Voiture* prev=NULL;
+    while(tmp!=NULL){
+        if(strcmp(tmp->marque, marque)==0 && strcmp(tmp->modele, modele)==0){
+            if(prev==NULL){
+                voitures=tmp->next;
+            }
+            else{
+                prev->next=tmp->next;
+            }
+            free(tmp);
+            printf("La voiture %s %s a été supprimée.\n",marque,modele);
+            return;
+        }
+        prev=tmp;
+        tmp=tmp->next;
+    }
+    printf("La voiture %s %s n'a pas été trouvée.\n",marque,modele);
+}
+
+void modifierDescriptionEtatVoiture(char* marque,char* modele,char* nouvelleMarque,char* nouveauModele,int nouvelleDisponibilite){
+    struct Voiture* tmp=voitures;
+    while(tmp!=NULL){
+        if(strcmp(tmp->marque,marque)==0 && strcmp(tmp->modele,modele)==0){
+            strcpy(tmp->marque,nouvelleMarque);
+            strcpy(tmp->modele,nouveauModele);
+            tmp->disponible=nouvelleDisponibilite;
+            printf("La description et l'état de la voiture %s %s ont été modifiés.\n",marque,modele);
+            return;
+        }
+        tmp=tmp->next;
+    }
+    printf("La voiture %s %s n'a pas été trouvée.\n",marque,modele);
+}
+
+void rechercherVoiture(char* marque, char* modele){
+    struct Voiture* tmp=voitures;
+    while(tmp!=NULL){
+        if(strcmp(tmp->marque, marque)==0 && strcmp(tmp->modele,modele)==0){
+            printf("Voiture trouvée :\n");
+            printf("Marque : %s\n",tmp->marque);
+            printf("Modèle : %s\n",tmp->modele);
+            printf("Disponibilité : %s\n",tmp->disponible ? "Disponible" : "Indisponible");
+            return;
+        }
+        tmp=tmp->next;
+    }
+    printf("La voiture %s %s n'a pas été trouvée.\n",marque,modele);
+}
+
+struct Reservation{
+    char date[10];
+    struct Voiture* voiture;
+    struct Reservation* next;
+};
+
+struct Reservation* reservations=NULL;
+
+void reserverVoiture(char* marque,char* modele,char* date){
+    struct Voiture* tmp=voitures;
+    while(tmp!=NULL){
+        if(strcmp(tmp->marque, marque)==0 && strcmp(tmp->modele, modele)==0){
+            if(tmp->disponible){
+                struct Reservation* nouvelleReservation=(struct Reservation*) malloc(sizeof(struct Reservation));
+                strcpy(nouvelleReservation->date,date);
+                nouvelleReservation->voiture=tmp;
+                nouvelleReservation->next=reservations;
+                reservations=nouvelleReservation;
+                printf("La voiture %s %s a été réservée pour la date %s.\n",marque,modele,date);
+            }
+            FILE *f=fopen("reservations.txt","a");
+                if(f==NULL){
+                    printf("Erreur d'ouverture du fichier!\n");
+                    exit(1);
+                }
+
+                fprintf(f, "Date : %s, Voiture : %s %s\n",date,marque,modele);
+                fclose(f);
+            }
+            else{
+                printf("La voiture %s %s n'est pas disponible.\n",marque,modele);
+            }
+            return;
+        }
+        tmp=tmp->next;
+
+    printf("La voiture %s %s n'a pas été trouvée.\n",marque,modele);
+}
+
+void genererRapportLocation(struct Location* locations){
+    int totalVoituresLouees=0;
+    float revenuTotal=0.0;
+    struct Voiture* voiturePlusPopulaire=NULL;
+    int compteurVoiturePlusPopulaire=0;
+    struct Location* tmp=locations;
+    while(tmp!=NULL){
+        totalVoituresLouees++;
+        revenuTotal+=tmp->prix;
+        int compteur=0;
+        struct Location* tmp2=locations;
+        while(tmp2!=NULL){
+            if(strcmp(tmp2->voiture->marque,tmp->voiture->marque)==0 && strcmp(tmp2->voiture->modele, tmp->voiture->modele)==0){
+                compteur++;}
+            tmp2=tmp2->next;
+        }
+        if(compteur>compteurVoiturePlusPopulaire){
+            compteurVoiturePlusPopulaire=compteur;
+            voiturePlusPopulaire=tmp->voiture;
+        }
+        tmp=tmp->next;
+    }
+    FILE *f = fopen("rapport.txt","w");
+    if (f==NULL){
+        printf("Erreur d'ouverture du fichier!\n");
+        exit(1);
+    }
+    fprintf(f, "Rapport de location :\n");
+    fprintf(f, "Total des voitures louées : %d\n",totalVoituresLouees);
+    fprintf(f, "Revenu total : %.2f\n",revenuTotal);
+    if(voiturePlusPopulaire!=NULL){
+        fprintf(f, "Voiture la plus populaire : %s %s\n",voiturePlusPopulaire->marque,voiturePlusPopulaire->modele);
+    }
+    fclose(f);
+}
+
+float calculerRevenuTotal(){
+    float revenuTotal=0.0;
+    struct Location* tmp=locations;
+    while(tmp!=NULL){
+        revenuTotal+=tmp->prix;
+        tmp=tmp->next;
+    }
+    return revenuTotal;
+}
+
+void afficherRevenuTotal(){
+    float revenuTotal=calculerRevenuTotal();
+    printf("Le revenu total généré par l'agence est de %.2f\n",revenuTotal);
+}
+int main(){
+    FILE *f=fopen("Main.txt","w");
+    if(f==NULL){
+        printf("Erreur d'ouverture du fichier!\n");
+        exit(1);
+    }
+    afficherVoituresDisponibles();
+    fprintf(f,"Voitures disponibles affichées.\n");
+    afficherHistoriqueLocations();
+    fprintf(f,"Historique des locations affiché.\n");
+    louerVoiture("Marque","Modèle","24/12/2023");
+    fprintf(f,"Voiture louée : Marque Modèle.\n");
+    afficherDescriptionVoiture("Marque","Modèle");
+    fprintf(f,"Description de la voiture affichée : Marque Modèle.\n");
+    supprimerVoiture("Marque","Modèle");
+    fprintf(f,"Voiture supprimée : Marque Modèle.\n");
+    modifierDescriptionEtatVoiture("Marque","Modèle","Nouvelle Marque","Nouveau Modèle",1);
+    fprintf(f,"Description et état de la voiture modifiés : Marque Modèle.\n");
+    rechercherVoiture("Marque","Modèle");
+    fprintf(f,"Voiture recherchée : Marque Modèle.\n");
+    reserverVoiture("Marque","Modèle","25/12/2023");
+    fprintf(f,"Voiture réservée : Marque Modèle.\n");
+    genererRapportLocation(locations);
+    fprintf(f,"Rapport de location généré.\n");
+    afficherRevenuTotal();
+    fprintf(f,"Revenu total affiché.\n");
+    fclose(f);
+}
